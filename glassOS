@@ -1,0 +1,186 @@
+-- This is the main file that Runs the glassOS 
+
+--Init Sys
+        version = 1.5.8
+        -- Player Name Here
+          player_name = "B8A"
+        --End
+        auto_shutdown = true
+       
+        --Wrap Peripherals
+                --Terminal Glasses
+                        glass = peripheral.wrap("bottom")
+       
+                --Others Connected to PC using Wired Cable
+                        xtern = peripheral.wrap("back")
+        --End
+       
+        --Drawing of top text
+                glass.clear()
+                os_name = glass.addText(6,5,"Glass OS: v" .. version, 0xFF0000)
+                welcome_message = glass.addText(6,15,"Welcome: " .. player_name, 0xFF0000)
+                time_GUI = glass.addText(100,5,"",0xFF0000)
+                --Reactor Info Box
+                        reactor_info = glass.addBox(6,100,100,35,0xFFFFFF,0.3)
+                                reactor_heat_txt = glass.addText(40,110,"",0xFFFFFF)
+                                reactor_heat_bar = glass.addBox(6,109,2,9,0x000000,1)
+                                glass.addBox(6,110,100,7,0x000000,0.4)
+                                reactor_output_txt = glass.addText(6, 117, "", 0xFFFFFF)
+                                reactor_status = glass.addText(6, 125, "", 0xFFFFFF)
+                --End
+        --End
+--End
+ 
+--Functions
+        --Get Power in Cell
+                function power_in_cell_0_avail()
+                        --Variables
+                                power_stored = xtern.callRemote("mfsu_0","getEUStored")
+                                power_max = xtern.callRemote("mfsu_0","getEUCapacity")
+                                power_cell0_avail = tonumber(power_stored) / tonumber(power_max) * 100
+                                power_cell_0 = tonumber(power_cell0_avail)
+                        --End
+               
+                        --Set Variables
+                                power_avail_cell0_box.setX(6 + power_cell_0)
+                                power_avail_cell0_text.setText("Cell 1: " .. math.floor(power_cell0_avail) .. "%")
+                        --End
+                end
+               
+        --Update Time And Change GUI Colour
+                function time_update()
+                        --Variables
+                                world_time = os.time()
+                                world_day = os.day()
+                        --End
+                       
+                        --Set Variables
+                                time_GUI.setText(textutils.formatTime(world_time, false) .. " Day: " .. world_day)
+                               
+                                if world_time > 19 or world_time < 6 then
+                                        power_avail_cell0_text.setColor(0x00FF00)
+                                        time_GUI.setColor(0x00FF00)
+                                        power_text.setColor(0x00FF00)
+                                        welcome_message.setColor(0x00FF00)
+                                        os_name.setColor(0x00FF00)
+                                        power_avail_cell0_box.setColor(0x00FF00)
+                                        --reactor_heat_txt.setColor(0x00FF00)
+                                        reactor_status.setColor(0x00FF00)
+                                        reactor_output_txt.setColor(0x00FF00)
+                                        eu_usage_txt.setColor(0x00FF00)
+                                else
+                                        power_avail_cell0_text.setColor(0x3600B3)
+                                        time_GUI.setColor(0x3600B3)
+                                        power_text.setColor(0x3600B3)
+                                        welcome_message.setColor(0x3600B3)
+                                        os_name.setColor(0x3600B3)
+                                        power_avail_cell0_box.setColor(0x3600B3)
+                                        --reactor_heat_txt.setColor(0x3600B3)
+                                        reactor_status.setColor(0x3600B3)
+                                        reactor_output_txt.setColor(0x3600B3)
+                                        eu_usage_txt.setColor(0x3600B3)
+                                end
+                        --End
+                end
+        --End
+       
+        --Reactor Information
+                function rector_info()
+                        --Variables
+                                reactor_max_heat = xtern.callRemote("nuclear_reactor_0", "getMaxHeat")
+                                reactor_heat = xtern.callRemote("nuclear_reactor_0", "getHeat")
+                               
+                                reactor_output = xtern.callRemote("nuclear_reactor_0", "getEUOutput")
+                               
+                                reactor_state = xtern.callRemote("nuclear_reactor_0", "isActive")
+                               
+                                percent_reactor_heat = tonumber(reactor_heat) / tonumber(reactor_max_heat) * 100
+                        --End
+                       
+                        --Set Variables
+                                if reactor_state == true then
+                                        reactor_status.setText("Reactor is ONLINE")
+                                        reactor_status.setColor(0x00FF00)
+                                end
+                                if reactor_state == false then
+                                        reactor_status.setText("Reactor is OFFLINE")
+                                        reactor_status.setColor(0xFF0000)
+                                end
+                               
+                                reactor_heat_txt.setText(math.ceil(percent_reactor_heat) .. "%")
+                                        if percent_reactor_heat >= 0 then
+                                                reactor_heat_txt.setColor(0xFFFFFF)
+                                        end
+                                        if percent_reactor_heat >= 25 then
+                                                reactor_heat_txt.setColor(0x9EFF9E)
+                                        end
+                                        if percent_reactor_heat >= 50 then
+                                                reactor_heat_txt.setColor(0x7F7FFF)
+                                        end
+                                        if percent_reactor_heat >= 75 then
+                                                reactor_heat_txt.setColor(0xFF5900)
+                                        end
+                                        if percent_reactor_heat >= 90 then
+                                                reactor_heat_txt.setColor(0x960000)
+                                        end
+                                       
+                                reactor_heat_bar.setX(6+percent_reactor_heat)
+                               
+                                reactor_output_txt.setText("Output: " .. reactor_output .. " EU/t")
+                        --End
+                end
+        --End
+ 
+        --Energy_Usage
+                function energy_usage()
+                        --Variables
+                                EU_usage_before = xtern.callRemote("mfsu_0","getEUStored")
+                                os.sleep(1)
+                                EU_usage_after = xtern.callRemote("mfsu_0", "getEUStored")
+                                EU_Usage = tonumber(EU_usage_after) - tonumber(EU_usage_before)
+                        --End
+ 
+                        --Setting Variables
+                                --If Statements
+                                        if EU_Usage == 0 then
+                                                eu_usage_txt.setText("EU Usage: " .. EU_Usage .. "(Idle)")
+                                                eu_usage_stat_box.setColor(0x000000)
+                                        end
+                                       
+                                        if EU_Usage > 0 then
+                                                eu_usage_txt.setText("EU Usage: " .. EU_Usage .. "(Gain)")
+                                                eu_usage_stat_box.setColor(0x00FF00)
+                                        end
+ 
+                                        if EU_Usage < 0 then
+                                                eu_usage_txt.setText("EU Usage: " .. EU_Usage * -1 .. "(Drain)")
+                                                eu_usage_stat_box.setColor(0xFF0000)
+                                        end
+                                --End
+                        --End
+        --End
+--End
+ 
+--Initialise Energy Storage Container
+        energy_storage = glass.addBox(6,34,100,21,0xFFFFFF,0.1)
+        power_text = glass.addText(6,35,"Power: ", 0x000000)
+        eu_usage_txt = glass.addText(6,50,"",0x000000)
+        eu_usage_stat_box = glass.addBox(50,50,10,10,0x000000,1)
+ 
+        --Per Energy Storage Unit
+                energy_cell_0_store = glass.addBox(6,46,100,7,0xFFFFFF, 0.5)
+                power_avail_cell0_box = glass.addBox(6,45,2,9,0x000000,1)
+                power_avail_cell0_text = glass.addText(40, 46, "",0x000000)
+               
+        --End
+       
+        --Update Of Display
+                while true do
+                        --Add Other Update Functions
+                        power_in_cell_0_avail()
+                        rector_info()
+                        time_update()
+                        os.sleep(0.2355555)
+                end
+        --End
+--End
